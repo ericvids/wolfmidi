@@ -52,7 +52,7 @@ Usage
 Can I play NOW, daddy?
 ----------------------
 
-A pre-built wolfmidi.pk3 has been provided for your convenience. Simply [download](raw/main/wolfmidi.pk3) the file, save it in your ECWolf directory, and modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.pk3" (without the quotes) in the shortcut's Target field.
+A pre-built wolfmidi.pk3 has been provided for your convenience. Simply [download](https://github.com/ericvids/wolfmidi/raw/main/wolfmidi.pk3) the file, save it in your ECWolf directory, and modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.pk3" (without the quotes) in the shortcut's Target field.
 
 I am H@xx0r Incarnate
 ---------------------
