@@ -11,11 +11,11 @@ if "%1"=="clean" goto clean
 mkdir WLF
 mkdir MUSIC
 mkdir MID
+ver >nul && rem This resets the errorlevel
 g++ src\getwlf.cpp -o getwlf.exe
 g++ src\dro2midi.cpp src\midiio.cpp -o dro2midi.exe
 if errorlevel 1 goto nogcc
-getwlf AUDIOT.WL6 WLF
-getwlf AUDIOT.SOD WLF
+for /f %%f in ('dir /b AUDIOT.*') do getwlf %%f WLF
 if not exist WLF\WONDERIN.WLF goto nowlf
 dro2midi -i WLF\COPYPRO.WLF MUSIC\COPYPRO
 dro2midi -i WLF\CORNER.WLF MUSIC\CORNER
@@ -94,8 +94,13 @@ copy MUSIC\XTOWER2  "MID\28 - The Tower.mid"
 copy MUSIC\ZEROHOUR "MID\17 - Zero Hour.mid"
 del wolfmidi.pk3
 zip wolfmidi.pk3 MUSIC\*
-fc /b MUSIC\HITLWLTZ MUSIC\COPYPRO
-if errorlevel 1 goto warn
+ver >nul && rem This resets the errorlevel
+if exist MUSIC\HITLWLTZ (
+    if exist MUSIC\COPYPRO (
+        fc /b MUSIC\HITLWLTZ MUSIC\COPYPRO
+        if errorlevel 1 goto warn
+    )
+)
 goto finish
 
 :clean
@@ -112,13 +117,12 @@ goto done
 
 :nowlf
 echo ============
-echo ERROR: No WLF files extracted. Make sure AUDIOT.WL6 and/or AUDIOT.SOD is present in the current directory.
+echo ERROR: No WLF files extracted. Make sure you have placed all your AUDIOT.* files in the current directory.
 goto done
 
 :warn
 echo ============
 echo WARNING: HITLWLTZ should generate the exact same .mid file as COPYPRO -- something's wrong with your rip.
-echo This is normal if you only have one game (Wolfenstein 3-D or Spear of Destiny), but not both.
 
 :finish
 echo ============

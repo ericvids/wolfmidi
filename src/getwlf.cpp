@@ -38,6 +38,12 @@ int main(int c, char *argv[])
                 size_t nextSize = buffer[p] + buffer[p + 1] * 256 + 2;
                 p += nextSize;
                 p += 88;
+                if (buffer[p - 88] != 1)
+                {
+                    p -= nextSize;
+                    printf("emptyfile\n");
+                    continue;
+                }
 
                 char sz[256];
                 strcpy(sz, argv[2]);

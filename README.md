@@ -72,7 +72,7 @@ choco install git mingw zip
 cd /d C:\Users\{username-without-brackets}\Desktop
 git clone https://github.com/ericvids/wolfmidi.git
 ```
-5. Copy and paste the AUDIOT.WL6 and/or AUDIOT.SOD files from your installation of Wolf3D and/or Spear (respectively) into the wolfmidi folder you just created.
+5. Copy and paste all AUDIOT.* files from your installation of Wolf3D and Spear into the wolfmidi folder you just created. (These AUDIOT files should have the extensions .WL1/.SDM for shareware/demo versions, or .WL6/.SOD for registered/retail versions.)
 6. Run the make.bat file.
 
 make.bat does the following:
