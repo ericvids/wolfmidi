@@ -86,8 +86,28 @@
 //     - Default to pitch bend range 2 for maximum General MIDI compatibility.
 //     - Fixed pitch bend bug where floating point inaccuracies force the pitch
 //       value below 0 or above max (the overflow value incorrectly being played).
-
-#define VERSION           "1.6W"
+//
+//  v1.7W / 2021-08-12 / ericvids (ericvids at gmail dot com): Changes
+//     - The Roland MT-32 using the MTGM.MID utility uses channels 0-7 and ignores
+//       channel 8. For compatibility, this version shifts the GM channels down one
+//       step. (1 maps to 0, 2 maps to 1, etc.) Wolf3d reserves channel 0 for sound
+//       effects so this should not be a problem.
+//     - Removed unnecessary reset messages at the start and end of the MIDI file in
+//       order to reduce latency when using serial-DIN MIDI.
+//     - Added per-patch customizable minimum time before note-off. Some Wolf3D songs
+//       trigger staccato notes that have long release times in their OPL instrument
+//       definition. Since standard GM does not allow specific release times (unlike
+//       in GS and GM2), the release time is instead simulated by delaying note-off
+//       events, which works for all GM devices.
+//     - Added GS drumkit support. While technically not supported by the GM standard,
+//       Roland GS devices support custom drumkits even when set to GM mode, and these
+//       kits are extensively used in games like Warcraft I/II (and are also used by
+//       Bobby Prince in his remade XFUNKIE.MID.) The orchestral drumkit effortlessly
+//       matches many (but not all) of Wolf3D's songs; for the exceptions, the drumkit
+//       is automatically selected depending on the other drum sounds used by the
+//       song. GM1-only devices will silently ignore GS drumkit program changes.
+//
+#define VERSION           "1.7W"
 #define MAPPING_FILE      "inst.txt"
 
 #define PATCH_NAME_FILE   "patch.txt"
@@ -166,6 +186,7 @@ MidiWrite* write = 0;
 int resolution = 500;   // 1000Hz DRO
 int program = 0;
 float tempo = 120.0;
+int drumKit = 0;
 
 // Arrays of [9] refer to OPL channels, arrays of [16] also refer to OPL
 // channels but use fake channels (11-15) for rhythm mode instruments (but
@@ -178,6 +199,7 @@ int curfreq[9];
 bool keyAlreadyOn[16];
 bool keyRequestOff[16];
 int keyTimeOut[16];
+int lastMinTime[16];
 int lastkey[16]; // last MIDI key pressed on this channel
 int pitchbent[16];
 int transpose[16]; // used for instruments with mapped transpose values
@@ -213,6 +235,8 @@ typedef struct
 	int prog;  // MIDI patch (or -1 if a drum)
 	int lowprog; // MIDI patch for lower notes
 	int isdrum;
+	int kit;  // drumkit to switch to when this patch is triggered
+	int mintime; // minimum time needed before the note is allowed to turn off
 	int note; // note to play if drum, or lower note cutoff to switch to lowprog
 	bool muted; // true if this instrument is muted
 	char name[128];
@@ -274,7 +298,7 @@ void usage()
 {
 	version();
 	fprintf(stderr,
-		"Usage: dro2midi [-p [-a]] [-r] [-i] [-c alt|<num>] [-v] input.dro output.mid\n"
+		"Usage: dro2midi [-p [-a]] [-r] [-i] [-c alt|<num>] [-v] [-d <num>] input.dro output.mid\n"
 		"\n"
 		"Where:\n"
 		"  -p   Disable use of MIDI pitch bends\n"
@@ -290,6 +314,7 @@ void usage()
 		"       of artificial pitchbends in the output MIDI.\n"
 		"  -v   Disable note velocity and play all notes as loudly as possible,\n"
 		"       instead of trying to match the volume of the OPL note.\n"
+		"  -k   Change the drumkit using GS mapping (default is 1 = standard)\n"
 		"\n"
 		"Supported input formats:\n"
 		" .raw  Rdos RAW OPL capture\n"
@@ -474,6 +499,8 @@ bool loadInstruments(void)
 
 		// Default options
 		in.isdrum = 0;
+		in.kit = -1;
+		in.mintime = 0;
 		in.prog = 0;
 		in.lowprog = -1;
 		in.iTranspose = 0;
@@ -539,6 +566,20 @@ bool loadInstruments(void)
 						instrcnt, iLineNum, in.note);
 					return false;
 				}
+			} else if (sscanf(nextopt, "kit=%d", &iValue) == 1) {
+				// MIDI drumkit
+				if (iValue < 1 || iValue > 128) {
+					fprintf(stderr, "ERROR: Kit must be between 1 and 128 inclusive.\n");
+					return false;
+				}
+				in.kit = iValue - 1;
+			} else if (sscanf(nextopt, "mintime=%d", &iValue) == 1) {
+				// minimum time
+				if (iValue < 0) {
+					fprintf(stderr, "ERROR: minimum time must be positive.\n");
+					return false;
+				}
+				in.mintime = iValue;
 			} else if (sscanf(nextopt, "transpose=%d", &iValue) == 1) {
 				// MIDI drum
 				in.iTranspose = iValue;
@@ -777,6 +818,15 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 		// job properly.
 		bool bKeyonAgain = true;
 
+		if (keyRequestOff[chanMIDI]) {
+			// process delayed key-off
+			write->noteoff(mapchannel[chanMIDI], lastkey[chanMIDI]);
+			::iNotesActive--;
+			lastkey[chanMIDI] = -1;
+			keyAlreadyOn[chanMIDI] = false;
+			keyRequestOff[chanMIDI] = false;
+		}
+
 		if (keyAlreadyOn[chanMIDI]) {
 			// There's already a note playing on this channel, just worry about the pitch of that
 
@@ -868,7 +918,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 
 						// make sure this sets things back to what they were in the init
 						// section in main()
-						mapchannel[chanMIDI] = chanMIDI;
+						mapchannel[chanMIDI] = (chanMIDI + 8) % 9;
 						drumnote[chanMIDI] = -1; // NOTE: This drumnote won't be reset if the drum instrument was muted!  (As it then wouldn't have been assigned to gm_drumchannel)
 					}
 
@@ -883,7 +933,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 						// the drum channel as we normally would, otherwise all the MIDI
 						// percussion will become muted.  So we assign it to its normal
 						// channel instead, like we would with a non-percussion instrument.
-						mapchannel[chanMIDI] = chanMIDI;
+						mapchannel[chanMIDI] = (chanMIDI + 8) % 9;
 					} else {
 						mapchannel[chanMIDI] = gm_drumchannel;
 					}*/
@@ -896,6 +946,23 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 			}
 
 			// Play the note
+
+			if (instr[i].kit > -1)
+				::drumKit = instr[i].kit;
+			if (!instr[i].isdrum) {
+				if (lastMinTime[chanMIDI] == -1) {
+					// channel not yet initialized; do it now
+					if (::bUsePitchBends) {
+						write->control(mapchannel[chanMIDI], 100, 0);  // RPN LSB for "Pitch Bend Sensitivity"
+						write->control(mapchannel[chanMIDI], 101, 0);  // RPN MSB for "Pitch Bend Sensitivity"
+						write->control(mapchannel[chanMIDI], 6, (int)PITCHBEND_RANGE); // Data for Pitch Bend Sensitivity (in semitones) - controller 38 can be used for cents in addition
+					}
+					write->resetctrlrs(mapchannel[chanMIDI], 0);  // Reset All Controllers (Ensures default settings upon every playback).
+					write->volume(mapchannel[chanMIDI], 127);
+					write->balance(mapchannel[chanMIDI], 64);  // Usually called 'Pan'.
+				}
+				lastMinTime[chanMIDI] = instr[i].mintime;
+			}
 
 			int level;
 			if (!mute[chanMIDI]) {
@@ -956,7 +1023,10 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 		// There's no note currently playing on this channel, so if we've still got
 		// one switch it off.
 		if (lastkey[chanMIDI] != -1) {
-			if (::iFormat == FORMAT_IMF && keyTimeOut[chanMIDI] < iInitialSpeed / NOTE_LENGTH_RATIO) {
+			int mintime = ::iInitialSpeed / NOTE_LENGTH_RATIO;
+			if (lastMinTime[chanMIDI] > mintime)
+				mintime = lastMinTime[chanMIDI];
+			if (::iFormat == FORMAT_IMF && keyTimeOut[chanMIDI] < mintime) {
 				// do not allow note off until note has played long enough
 				keyRequestOff[chanMIDI] = true;
 			} else {
@@ -1011,6 +1081,18 @@ int main(int argc, char**argv)
 					fprintf(stderr, "-c requires a non-zero parameter\n");
 					usage();
 				}
+			}
+		} else if (strncasecmp(*argv, "-k", 2) == 0) {
+			argc--; argv++;
+			if (argc == 0) {
+				fprintf(stderr, "-k requires a parameter\n");
+				usage();
+			}
+			// Use the given value
+			::drumKit = strtod(*argv, NULL) - 1;
+			if (::drumKit < 0 || ::drumKit > 127) {
+				fprintf(stderr, "-k requires a parameter between 1 and 128\n");
+				usage();
 			}
 		} else if (strncasecmp(*argv, "--version", 9) == 0) {
 			version();
@@ -1126,19 +1208,11 @@ int main(int argc, char**argv)
 		iSpeed = iInitialSpeed;
 	}
 	resolution = iInitialSpeed / 2;
-	write->head(/* version */ 0, /* track count updated later */0, resolution);
+	write->head(/* version */ 1, /* track count updated later */0, resolution);
 
 	write->track();
-	write->tempo((long)(60000000.0 / tempo));
-	write->tact(4,4,24,8);
-
-	for (c = 0; c < 10; c++) {
-		mapchannel[c] = c;
-		write->resetctrlrs(mapchannel[c], 0);  // Reset All Controllers (Ensures default settings upon every playback).
-		write->volume(mapchannel[c], 127);
-		write->balance(mapchannel[c], 64);  // Usually called 'Pan'.
-		write->expression(mapchannel[c], 127);  // Similar to 'Volume', but this is primarily used for volume damping.
-	}
+	//write->tempo((long)(60000000.0 / tempo));
+	//write->tact(4,4,24,8);
 
 	for (c = 0; c <= 8; c++) {
 		lastprog[c] = -1;
@@ -1151,35 +1225,28 @@ int main(int argc, char**argv)
 
 	for (c = 0; c < 9; c++) {
 		curfreq[c] = 0;
-		mapchannel[c] = c;  // This can get reset when playing a drum and then a normal instrument on a channel - see instrument-change code below
+		mapchannel[c] = (c + 8) % 9;  // This can get reset when playing a drum and then a normal instrument on a channel - see instrument-change code below
 		keyAlreadyOn[c] = false;
 		keyRequestOff[c] = false;
 		keyTimeOut[c] = 0;
+		lastMinTime[c] = -1; // channel not yet initialized
 		lastkey[c] = -1; // last MIDI key pressed on this channel
 		pitchbent[c] = (int)pitchbend_center;
 		transpose[c] = 0;
 		drumnote[c] = 0; // probably not necessary...
 		mute[c] = false;
-
-		if (::bUsePitchBends) {
-			write->control(mapchannel[c], 100, 0);  // RPN LSB for "Pitch Bend Sensitivity"
-			write->control(mapchannel[c], 101, 0);  // RPN MSB for "Pitch Bend Sensitivity"
-			write->control(mapchannel[c], 6, (int)PITCHBEND_RANGE); // Data for Pitch Bend Sensitivity (in semitones) - controller 38 can be used for cents in addition
-			write->control(mapchannel[c], 100, 0x7F);  // RPN LSB for "Finished"
-			write->control(mapchannel[c], 101, 0x7F);  // RPN MSB for "Finished"
-		}
-//		write->pitchbend(mapchannel[c], pitchbend_center);
 	}
 	// Rhythm-mode only channels
 	for (c = 10; c < 15; c++) {
-		keyAlreadyOn[c] = false;
-		keyRequestOff[c] = false;
-		keyTimeOut[c] = 0;
 		mapchannel[c] = c; // as above, this will be changed later but must be
 			// eventually set back to this value here (or the instrument will jump
 			// channels unexpectedly.)
-		pitchbent[c] = (int)pitchbend_center;
+		keyAlreadyOn[c] = false;
+		keyRequestOff[c] = false;
+		keyTimeOut[c] = 0;
+		lastMinTime[c] = -1; // channel not yet initialized
 		lastkey[c] = -1; // last MIDI key pressed on this channel
+		pitchbent[c] = (int)pitchbend_center;
 		transpose[c] = 0;
 		drumnote[c] = 0; // probably not necessary...
 		mute[c] = false;
@@ -1309,7 +1376,7 @@ int main(int argc, char**argv)
 		if (code >= 0xa0 && code <= 0xa8) { // set freq bits 0-7
 			channel = code-0xa0;
 			curfreq[channel] = (curfreq[channel] & 0xF00) + (param & 0xff);
-			if (keyAlreadyOn[channel]) {
+			if (keyAlreadyOn[channel] && ! keyRequestOff[channel]) {
 				param = 0x20; // bare noteon for code below
 				doNoteOnOff(true, channel, channel);
 			}
@@ -1352,10 +1419,27 @@ int main(int argc, char**argv)
 		}
 	}
 
-	for (c = 0; c < 10; c++) {
-		mapchannel[c] = c;
-		write->allnotesoff(mapchannel[c], 0);  // All Notes Off (Ensures that even incomplete Notes will be switched-off per each MIDI channel at the end-of-playback).
+	// turn off any remaining notes
+	if (::iNotesActive > 0) {
+		for (c = 0; c < 9; c++) {
+			if (lastkey[c] != -1) {
+				write->noteoff(mapchannel[c], lastkey[c]);
+				::iNotesActive--;
+			}
+		}
+	} else {
+		// if there weren't any remaining notes, we still need to mark the end of the track for proper looping
+		// (it can be any non-playing message)
+		write->allnotesoff(gm_drumchannel, 0);
 	}
+
+	// write the final drumkit used
+	write->track();
+	write->resetctrlrs(gm_drumchannel, 0);  // Reset All Controllers (Ensures default settings upon every playback).
+	write->volume(gm_drumchannel, 127);
+	write->balance(gm_drumchannel, 64);  // Usually called 'Pan'.
+	write->program(gm_drumchannel, ::drumKit);
+	printf("\nUsing drumkit %d", ::drumKit + 1);
 
 	delete write;
 	fclose(f);

@@ -48,6 +48,47 @@ This mod's philosophy is to map only one GM instrument per OPL2 patch for consis
 Okay, technically you can, but you will have to manage the conversion process per-file or edit the MIDI files directly. But then that goes against the point of this mod -- which is, to automatically generate General MIDI files from just the original game data. Those per-song instrument variations anyway _did_ sound the same in OPL2 since the game data itself did not say otherwise. Some might say that this is too much of a "nostalgia-purist" approach that ignores the intentions of the composer, but one can argue that you can go even more "purist" -- just don't use any music mods at all! -- and besides, this is the particular itch I wanted to scratch. I want to hear the game's music the way I remember it, only with higher quality drums and instruments than OPL2, and I want it to sound consistent across the entire game. If you feel the same, then this mod is for you. If not, there may be another existing music mod that works for you (or, you can modify _this_ mod to your liking; that's the beauty of open source).
 
 
+Version History
+===============
+
+1.1 (2021-08-12)
+----------------
+
+- Made extensive changes to inst.txt to use custom release time and GS drumkit
+  support (details mentioned in dro2midi changes below), as well as to adjust
+  balance and compatibility with other synthesizers (XG and MT-32).
+- Many songs that previously used Tubular Bells now use a more faithful sound,
+  e.g., NAZI_OMI now uses the Recorder patch. (The original WLF encoding used
+  staccato notes with long release times, which, without compensation, were
+  only previously playable in GM1 using the Tubular Bells patch.)
+- Previously incomplete songs due to the use of OPL-specific noise effects,
+  e.g., GOINGAFT and INTROCW3, should now sound more complete.
+- dro2midi changes:
+  - The Roland MT-32 using the MTGM.MID utility uses channels 0-7 and ignores
+    channel 8. For compatibility, this version shifts the GM channels down one
+    step. (1 maps to 0, 2 maps to 1, etc.) Wolf3d reserves channel 0 for sound
+    effects so this should not be a problem.
+  - Removed unnecessary reset messages at the start and end of the MIDI file in
+    order to reduce latency when using serial-DIN MIDI.
+  - Added per-patch customizable minimum time before note-off. Some Wolf3D songs
+    trigger staccato notes that have long release times in their OPL instrument
+    definition. Since standard GM does not allow specific release times (unlike
+    in GS and GM2), the release time is instead simulated by delaying note-off
+    events, which works for all GM devices.
+  - Added GS drumkit support. While technically not supported by the GM standard,
+    Roland GS devices support custom drumkits even when set to GM mode, and these
+    kits are extensively used in games like Warcraft I/II (and are also used by
+    Bobby Prince in his remade XFUNKIE.MID.) The orchestral drumkit effortlessly
+    matches many (but not all) of Wolf3D's songs; for the exceptions, the drumkit
+    is automatically selected depending on the other drum sounds used by the
+    song. GM1-only devices will silently ignore GS drumkit program changes.
+
+1.0 (2021-06-30)
+----------------
+
+- Initial release.
+
+
 Usage
 =====
 
@@ -56,8 +97,46 @@ Can I play NOW, daddy?
 
 A pre-built [wolfmidi.pk3](https://github.com/ericvids/wolfmidi/raw/main/wolfmidi.pk3) has been provided for your convenience. Simply [download](https://github.com/ericvids/wolfmidi/raw/main/wolfmidi.pk3) the file, save it in your ECWolf folder, and modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.pk3" (without the quotes) in the shortcut's Target field.
 
-I am H@xx0r Incarnate
----------------------
+Don't hurt MIDI.
+----------------
+
+ECWolf seems to use only the first (default) MIDI device reported in the system, which is usually the crappy Microsoft GS Wavetable Synth. You may need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) to set the Windows default MIDI device.
+
+Bring "M" on!
+-------------
+
+This mod has been tested with the following hardware and synthesizers (ordered by personal preference):
+
+- Roland SC-D70 (equivalent to Roland SC-8820)
+- Roland CM-300 (equivalent to Roland SC-55)
+- [Roland SC-VA VST](https://www.roland.com/us/products/rc_sound_canvas_va/)
+  - Requires [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) and [SAVIHost for 64-bit VST2](https://www.hermannseib.com/english/savihost.htm).
+  - Set up loopMIDI first. Make sure to create a loopMIDI port.
+  - Refer to the SAVIHost instructions on how to get the VST working with it.
+    - _For SC-VA, make sure you are using a *64-bit* VST2 version._
+  - Under the VST window's main menu, select Devices->MIDI and select the loopMIDI port in Input Port 1. (NOT in Output Port.)
+  - In the VST itself, select Option->SYSTEM and change the map mode to your preference (SC-8820, SC-55, etc.). Then change the sound module mode to GM.
+  - If ECWolf refuses to run with this device by default, use [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
+- [Coolsoft VirtualMIDISynth](https://coolsoft.altervista.org/en/virtualmidisynth)
+  - Tested with [trevor0402's](https://github.com/trevor0402/SC55Soundfont/releases) and [Patch93's](https://musical-artifacts.com/artifacts/1228) SC-55 soundfonts.
+- [Yamaha S-YXG50 VST](https://veg.by/en/projects/syxg50/)
+  - Requires [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) and [SAVIHost for 32-bit VST2](https://www.hermannseib.com/english/savihost.htm).
+  - Set up loopMIDI first. Make sure to create a loopMIDI port.
+  - Refer to the SAVIHost instructions on how to get the VST working with it.
+    - _For S-YXG50, make sure you are using a *32-bit* VST2 version._
+  - Under the VST window's main menu, select Devices->MIDI and select the loopMIDI port in Input Port 1. (NOT in Output Port.)
+  - If ECWolf refuses to run with this device by default, use [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
+- [Munt MT-32](https://sourceforge.net/projects/munt/)
+  - Requires [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html). Make sure to create a loopMIDI port.
+  - Run the Munt MT-32 shortcut on your Start Menu, then click Tools->New MIDI Port and select the loopMIDI port.
+  - Using a MIDI player, play Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on the loopMIDI device _before_ launching ECWolf.
+  - If ECWolf refuses to run with this device by default, use [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
+- Microsoft GS Wavetable Synth (meh)
+
+It should also work on a real MT-32 or CM-32L with Roland's MTGM.MID utility. (I don't have either, but other users say that Munt is very close.)
+
+I am H@xx0r Incarnate!
+----------------------
 
 If you want to build the .pk3 or the MIDI files from scratch, using your own copy of the game(s)' data:
 

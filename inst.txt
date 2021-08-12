@@ -23,28 +23,29 @@
 #
 # Patches for various sound effects are very hard or impossible to match
 # to General MIDI. In particular, Bobby Prince used the gunshot sound for
-# marching in the official WARMARCH and XEVIL MIDI files, but using this
-# sound as-is introduces conflicts with other songs such as POW's bass drum
-# (hence the melodic tom was used instead as a compromise). The noise patch
-# in GOINGAFT, INTROCW3, and XDEATH is practically nonexistent in General
-# MIDI (and in fact dro2midi seems unable to extract all of the noise notes
-# out of INTROCW3). For now, I assigned this to the seashore sound -- the
-# only reason for this is because rendering the seashore sound on an OPL
-# General MIDI player will produce a very similar noise. I apologize if it
-# doesn't sound right on your MIDI synth.
+# marching in the official WARMARCH and XEVIL remakes, but using this sound
+# as-is introduces conflicts with other songs such as POW's bass drum; as a
+# compromise, the melodic tom was used instead. The radio noise in GOINGAFT,
+# INTROCW3, and XDEATH is a practically nonexistent sound in General MIDI.
+# I assigned this to the seashore sound. (I found out that the Roland demo
+# GS songs extensively uses the seashore sound to emulate radio noise.)
 #
-# Patches indicated by ### are intelligent guesses, loosely guided by
-# their OPL register settings and the actual OPL render of the songs.
-# Feel free to tweak them further. If you find much better settings
-# that works across all songs, please share those settings with us!
-# The settings used here assume a Roland Sound Canvas SC-55, and tested
-# with an SC-D70 running with the SC-55, SC-8820, and GM2 instrument
-# maps. (Only the GM1 default instrument bank is used, however; dro2midi
-# does not anyway support changing of instrument banks. Yet.)
+# Patches indicated by ### are intelligent guesses, loosely guided by their
+# OPL register settings and the actual OPL render of the songs. Feel free
+# to tweak them further. If you find much better settings that works across
+# all songs, please share those settings with us!
+#
+# Only General MIDI 1 instruments are used; however, as of version 1.1,
+# GS drumkits are selectable by specifying a kit number along with any
+# patch. Only one kit may be used per song; if two patches are tagged
+# with different kits and are simultaneously used in one song, the kit
+# of the patch with the last note-on is prioritized. (So far there isn't
+# any need for a better priority scheme.) If no kit gets selected, the
+# kit specified in the command line is used as default.
 #
 # - ericvids
 
-NO 00-00/0B-00/A8-D6/4C-4F/00/00-00: patch=46 lowpatch=118 lownote=43 transpose=-12     # d35 (POW), d35 (WARMARCH)
+NO 00-00/0B-00/A8-D6/4C-4F/00/00-00: patch=46 lowpatch=118 lownote=43 transpose=-12     # d35 (POW), d35 (WARMARCH) -- pizzicato/melotom used depending on final note pitch
 NO 00-00/0D-00/E8-A5/EF-FF/06/00-00: drum=36                                            # 5 (GETTHEM), d36 (SEARCHN), d35 (XEVIL), d35 (XFUNKIE), d36 (XTOWER2), d36 (ZEROHOUR)
 NO 00-00/40-00/09-F7/53-94/00/00-00: patch=48 transpose=-12                             # 119 (CORNER), 48 (WONDERIN)
 NO 01-01/11-00/F0-F0/FF-F8/0A/00-00: patch=76                                           # 76 (WARMARCH), 21 (XEVIL)
@@ -52,28 +53,28 @@ NO 01-11/4F-00/F1-F2/53-74/06/00-00: patch=2                                    
 NO 01-21/18-80/D4-C4/F2-8A/0A/00-00: patch=37                                           # 37 (XFUNKIE)
 NO 02-01/29-80/F0-F4/75-33/00/00-00: patch=100                                          # 16 (CORNER), 100 (XTOWER2)
 NO 02-01/29-80/F5-F2/75-F3/00/00-00: patch=9                                            # 9 (SEARCHN)
-NO 03-21/8F-80/F5-F3/55-33/00/00-00: patch=15                                         ### (manually-assigned)
-NO 05-00/00-00/F0-F6/FF-FF/0E/00-00: drum=46                                          ### (manually-assigned)
-NO 05-00/00-00/F0-F8/77-E5/0E/00-00: drum=42                                            # d42 (XFUNKIE)
+NO 03-21/8F-80/F5-F3/55-33/00/00-00: patch=105                                        ### (manually-assigned)
+NO 05-00/00-00/F0-F6/FF-FF/0E/00-00: drum=46 kit=1                                    ### (manually-assigned)
+NO 05-00/00-00/F0-F8/77-E5/0E/00-00: drum=42 kit=26                                     # d42 (XFUNKIE)
 NO 05-00/00-00/F0-F8/FF-B9/0E/01-00: drum=40                                            # d40 (ZEROHOUR)
-NO 05-00/00-00/F0-FA/77-E5/0E/00-00: drum=42                                            # d42 (ZEROHOUR)
-NO 06-00/00-00/55-F8/F0-F5/0E/00-00: drum=40                                            # d40 (CORNER), d40 (ULTIMATE), d40 (WARMARCH)
-NO 06-00/00-00/F0-F7/F0-F7/0E/00-00: drum=40                                            # d40 (GETTHEM), d40 (SEARCHN), d40 (XEVIL), d38 (XFUNKIE)
-NO 06-00/00-00/F4-F6/A0-46/0E/00-00: drum=46                                          ### (manually-assigned)
-NO 07-00/00-00/F0-5C/F0-DC/0E/00-00: patch=120                                          # 120 (GETTHEM)
-NO 07-12/0A-00/F2-F2/60-52/00/03-03: drum=51                                          ### (manually-assigned)
+NO 05-00/00-00/F0-FA/77-E5/0E/00-00: drum=42 kit=1                                      # d42 (ZEROHOUR)
+NO 06-00/00-00/55-F8/F0-F5/0E/00-00: drum=38                                            # d40 (CORNER), d40 (ULTIMATE), d40 (WARMARCH) -- d38 used to allow drumkit-specific snare
+NO 06-00/00-00/F0-F7/F0-F7/0E/00-00: drum=38                                            # d40 (GETTHEM), d40 (SEARCHN), d40 (XEVIL), d38 (XFUNKIE)
+NO 06-00/00-00/F4-F6/A0-46/0E/00-00: drum=46 kit=1                                    ### (manually-assigned)
+NO 07-00/00-00/F0-5C/F0-DC/0E/00-00: patch=120 mintime=140 kit=26                       # 120 (GETTHEM)
+NO 07-12/0A-00/F2-F2/60-52/00/03-03: drum=51 kit=1                                    ### (manually-assigned)
 NO 07-12/4F-00/F2-F2/60-72/08/00-00: patch=15 transpose=27                            ### (manually-assigned)
 NO 11-01/44-00/F8-F7/FF-45/00/00-00: drum=36                                          ### (manually-assigned)
 NO 11-11/0A-00/FE-F2/04-BD/08/00-00: patch=40                                         ### (manually-assigned)
-NO 11-E4/03-40/82-F0/97-F2/08/00-00: patch=15                                         ### (manually-assigned)
-NO 13-E1/4D-00/FA-F1/11-F1/08/00-00: patch=15                                           # 89 (CORNER), 89 (POW) -- 15 used to lengthen release time
-NO 16-E1/4D-00/FA-F1/11-F1/08/00-00: patch=15                                           # 89 (XTOWER2)          -- 15 used to lengthen release time
-NO 17-31/C0-80/12-13/41-31/06/00-00: patch=10                                         ### (manually-assigned)
+NO 11-E4/03-40/82-F0/97-F2/08/00-00: patch=75 transpose=12 mintime=3500               ### (manually-assigned)
+NO 13-E1/4D-00/FA-F1/11-F1/08/00-00: patch=89 mintime=3500 kit=26                       # 89 (CORNER), 89 (POW)
+NO 16-E1/4D-00/FA-F1/11-F1/08/00-00: patch=89 mintime=3500 kit=26                       # 89 (XTOWER2)
+NO 17-31/C0-80/12-13/41-31/06/00-00: patch=96 transpose=36 mintime=2500               ### (manually-assigned)
 NO 20-21/1B-00/63-63/0A-0B/0C/00-00: patch=58                                         ### (manually-assigned)
 NO 21-21/15-00/B4-94/4C-AC/0A/00-00: patch=40                                           # 40 (POW)
 NO 21-21/15-80/D3-C3/2C-2C/0A/00-00: patch=33                                           # 33 (ZEROHOUR)
 NO 21-21/16-00/63-63/0E-0E/0C/00-00: patch=57                                           # 57 (WARMARCH)
-NO 21-21/9A-80/53-A0/56-16/0E/00-00: patch=59                                           # 93 (SEARCHN), 59 (ULTIMATE), 61 (WONDERIN)
+NO 21-21/9A-80/53-A0/56-16/0E/00-00: patch=59 mintime=57                                # 93 (SEARCHN), 59 (ULTIMATE), 61 (WONDERIN) -- mintime is set to minimize tuning problem on MT-32
 NO 21-A1/16-80/77-60/8F-2A/06/00-00: patch=47                                         ### (manually-assigned)
 NO 21-A1/19-80/77-60/BF-2A/06/00-00: patch=47                                           # 47 (SEARCHN)
 NO 2B-21/CA-00/F8-C0/E5-FF/00/00-00: patch=6                                          ### (manually-assigned)
@@ -81,19 +82,19 @@ NO 2C-A1/D4-00/F9-C0/FF-FF/00/00-00: patch=6                                    
 NO 30-10/90-00/F4-F4/49-33/0C/00-00: patch=39 transpose=-12                           ### (manually-assigned)
 NO 30-21/16-00/73-20/7E-9E/0E/00-00: patch=96                                           # 96 (XFUNKIE)
 NO 30-21/16-00/73-80/7E-9E/0E/00-00: patch=39 transpose=-12                             # 39 (GETTHEM)
-NO 30-35/35-00/F5-F0/F0-9B/02/00-00: patch=33 transpose=16                            ### (manually-assigned)
-NO 31-16/81-80/A1-C2/30-74/08/00-00: patch=63                                           # 85 (POW), 63 (XEVIL)
+NO 30-35/35-00/F5-F0/F0-9B/02/00-00: patch=5 transpose=28                             ### (manually-assigned)
+NO 31-16/81-80/A1-C2/30-74/08/00-00: patch=63 kit=26                                    # 85 (POW), 63 (XEVIL)
 NO 31-21/16-00/63-63/0A-0B/0C/00-00: patch=67                                           # 67 (ZEROHOUR)
 NO 31-21/16-00/73-80/8E-9E/0E/00-00: patch=82                                           # 82 (ULTIMATE)
 NO 31-22/C3-00/87-8B/17-0E/02/00-00: patch=69                                           # 69 (ULTIMATE), 70 (WARMARCH)
-NO 31-32/44-00/F2-F0/9A-27/06/00-00: patch=82                                           # 29 (SEARCHN), 82 (XTOWER2)
-NO 31-32/45-00/F1-F2/53-27/06/00-00: patch=88                                         ### (manually-assigned)
+NO 31-32/44-00/F2-F0/9A-27/06/00-00: patch=63                                           # 29 (SEARCHN), 82 (XTOWER2) -- 63 used because 82 is too overpowering on XG
+NO 31-32/45-00/F1-F2/53-27/06/00-00: patch=63 kit=26                                  ### (manually-assigned)
 NO 31-35/35-00/F5-F0/00-9B/02/00-00: patch=81 transpose=28                            ### (manually-assigned)
 NO 31-61/1B-00/61-D2/06-36/0C/00-00: patch=58                                           # 58 (POW), 59 (SEARCHN), 57 (ZEROHOUR)
 NO 31-61/1B-00/64-D0/07-67/0E/00-00: patch=61                                           # 61 (ULTIMATE), 89 (WARMARCH)
 NO 31-61/1F-00/31-50/06-36/0C/00-00: patch=58                                           # 58 (POW)
 NO 31-61/1F-00/41-A0/06-36/0C/00-00: patch=61                                           # 61 (XTOWER2)
-NO 32-11/40-00/F8-F5/FF-7F/0E/00-00: patch=46 lowpatch=118 lownote=43                   # d73/128 (XEVIL)
+NO 32-11/40-00/F8-F5/FF-7F/0E/00-00: patch=46 lowpatch=118 lownote=43                   # d73/128 (XEVIL) -- pizzicato/melotom used depending on final note pitch
 NO 32-11/41-00/F8-F5/FF-7F/0E/00-00: patch=46 lowpatch=118 lownote=43                   # d73/128 (XEVIL)
 NO 32-11/42-00/F8-F5/FF-7F/0E/00-00: patch=46 lowpatch=118 lownote=43                   # d73/128 (XEVIL)
 NO 32-11/43-00/F8-F5/FF-7F/0E/00-00: patch=46 lowpatch=118 lownote=43                   # d73/128 (XEVIL)
@@ -131,7 +132,7 @@ NO 93-A1/4C-00/FA-F1/11-F1/08/00-03: patch=15 transpose=12                      
 NO A1-E2/13-80/D6-60/AF-2A/02/00-00: patch=74                                           # 74 (GETTHEM)
 NO A2-E2/1D-80/95-60/24-2A/02/00-00: patch=74 transpose=12                              # 74 (CORNER), 73 (WARMARCH), 44 (WONDERIN)
 NO B0-D7/C4-80/A4-40/02-42/00/00-00: patch=10                                         ### (manually-assigned)
-NO CA-CC/84-00/F0-59/F0-62/0C/00-00: patch=123 transpose=-24                          ### (manually-assigned)
+NO CA-CC/84-00/F0-59/F0-62/0C/00-00: patch=123 mintime=3500                           ### (manually-assigned)
 NO D7-D2/4F-00/F2-F1/61-B2/08/00-00: patch=15 transpose=24                            ### (manually-assigned)
 NO E2-E1/CA-00/F8-C0/E5-0E/08/00-00: patch=18                                           # 18 (XEVIL), 103 (XFUNKIE)
-NO F1-E1/18-00/32-F1/11-13/00/00-00: patch=91                                           # 78 (POW), 89 (XTOWER2), 29 (ZEROHOUR) -- 91 used to shorten attack
+NO F1-E1/18-00/32-F1/11-13/00/00-00: patch=91                                           # 78 (POW), 89 (XTOWER2), 29 (ZEROHOUR) -- 91 used instead of 89 to more closely match attack time of 78 and 29
