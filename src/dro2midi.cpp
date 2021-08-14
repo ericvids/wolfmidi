@@ -107,7 +107,18 @@
 //       is automatically selected depending on the other drum sounds used by the
 //       song. GM1-only devices will silently ignore GS drumkit program changes.
 //
-#define VERSION           "1.7W"
+//  v1.71W / 2021-08-14 / ericvids (ericvids at gmail dot com): Changes
+//     - Added loop length adjustment by specifying a channel to track, followed by
+//       the number of notes on this channel during the last measure (and, optionally,
+//       second-to-the-last). The end time of the song will be adjusted by lengthening
+//       the last measure to be as long as the second-to-the-last one, minus the time
+//       before the first note on the tracked channel. Now the title song and several
+//       other songs loop correctly!
+//     - Placed drumkit change at the start of the track instead of creating a new
+//       track, because ECWolf currently has a bug where MIDI time offsets are not
+//       synchronously processed across all tracks.
+//
+#define VERSION           "1.71W"
 #define MAPPING_FILE      "inst.txt"
 
 #define PATCH_NAME_FILE   "patch.txt"
@@ -131,6 +142,7 @@ const double pitchbend_center = 8192.0;
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <memory>
 
 #define WRITE_BINARY  "wb"
 #define READ_TEXT     "r"
@@ -298,23 +310,25 @@ void usage()
 {
 	version();
 	fprintf(stderr,
-		"Usage: dro2midi [-p [-a]] [-r] [-i] [-c alt|<num>] [-v] [-d <num>] input.dro output.mid\n"
+		"Usage: dro2midi [-p [-a]] [-r] [-i] [-c alt|<num>] [-v] [-k <kit>] [-l <ch>] [-m <m>] [-n <n>] input.dro output.mid\n"
 		"\n"
 		"Where:\n"
-		"  -p   Disable use of MIDI pitch bends\n"
-		"  -a   If pitchbends are disabled, approximate by playing the nearest note\n"
-		"  -r   Don't convert OPL rhythm-mode instruments\n"
-		"  -i   Only use instruments that match perfectly (default is 'close enough is\n"
-		"       good enough.') Useful when guessing new patches. Instruments that can't\n"
-		"       be matched use the first entry in " MAPPING_FILE " (piano by default)\n"
-		"  -c   Change the value used to convert OPL notes into MIDI notes from the\n"
-		"       default 49716.  Any non-zero value can be specified.  The special word\n"
-		"       \"alt\" means 50000, the other commonly used value.  It is unlikely any\n"
-		"       other values will need to be used, unless you get an excessive amount\n"
-		"       of artificial pitchbends in the output MIDI.\n"
-		"  -v   Disable note velocity and play all notes as loudly as possible,\n"
-		"       instead of trying to match the volume of the OPL note.\n"
-		"  -k   Change the drumkit using GS mapping (default is 1 = standard)\n"
+		"  -p      Disable use of MIDI pitch bends\n"
+		"  -a      If pitchbends are disabled, approximate by playing the nearest note\n"
+		"  -r      Don't convert OPL rhythm-mode instruments\n"
+		"  -i      Only use instruments that match perfectly (default is 'close enough is\n"
+		"          good enough.') Useful when guessing new patches. Instruments that can't\n"
+		"          be matched use the first entry in " MAPPING_FILE " (piano by default)\n"
+		"  -c      Change the value used to convert OPL notes into MIDI notes from the\n"
+		"          default 49716.  Any non-zero value can be specified.  The special word\n"
+		"          \"alt\" means 50000, the other commonly used value.  It is unlikely any\n"
+		"          other values will need to be used, unless you get an excessive amount\n"
+		"          of artificial pitchbends in the output MIDI.\n"
+		"  -v      Disable note velocity and play all notes as loudly as possible,\n"
+		"          instead of trying to match the volume of the OPL note.\n"
+		"  -k      Change the drumkit using GS mapping (default is 1 = standard)\n"
+		"  -l/m/n  Equalize the length of the last two measures of the song (ch = channel to track,\n"
+		"          m = # of notes in last measure, n = # of notes in second-to-the-last measure)\n"
 		"\n"
 		"Supported input formats:\n"
 		" .raw  Rdos RAW OPL capture\n"
@@ -800,6 +814,120 @@ int findinstr(int chanMIDI)
 	return besti;
 }
 
+//////
+// ericvids's quick-and-dirty loop length calculation support code
+// queues are not circular, so if an assertion happens, just increase the sizes
+
+#define NOTE_ON_QUEUE_SIZE 2048
+#define NOTE_OFF_QUEUE_SIZE 16
+
+static int channelToTrack = 9;
+static int numNotesInLastMeasure;
+static int numNotesInSTTLMeasure;
+
+static int delayedTimeAdvance;
+static int totalTime;
+
+static int noteOnQueue;
+static int noteOnTime[NOTE_ON_QUEUE_SIZE];
+static int firstSongNoteOnTime = -1;
+static int firstChannelNoteOnTime = -1;
+
+static int noteOffQueue;
+static int noteOffTimeOffset[NOTE_OFF_QUEUE_SIZE];
+static int noteOffChannel[NOTE_OFF_QUEUE_SIZE];
+static int noteOffKey[NOTE_OFF_QUEUE_SIZE];
+
+bool doTimeAdvance()
+{
+	int timeAdvance = 0;
+	for (int i = 0; i < ::noteOffQueue; i++) {
+		write->time(::noteOffTimeOffset[i] - timeAdvance);
+		timeAdvance = ::noteOffTimeOffset[i];
+		write->noteoff(::noteOffChannel[i], ::noteOffKey[i]);
+	}
+	::noteOffQueue = 0;
+	bool exactTimeOff = (::delayedTimeAdvance - timeAdvance == 0);
+	write->time(::delayedTimeAdvance - timeAdvance);
+	::totalTime += ::delayedTimeAdvance;
+	::delayedTimeAdvance = 0;
+	return exactTimeOff;
+}
+
+void countNoteOnMessage(int channel)
+{
+	if (::firstSongNoteOnTime == -1)
+		::firstSongNoteOnTime = ::totalTime;
+
+	if (::channelToTrack != channel)
+		return;
+
+	if (::firstChannelNoteOnTime == -1)
+		::firstChannelNoteOnTime = ::totalTime;
+
+	::noteOnTime[::noteOnQueue] = ::totalTime;
+	::noteOnQueue++;
+	assert(::noteOnQueue < NOTE_ON_QUEUE_SIZE);
+}
+
+void queueNoteOffMessage(int channel, int key)
+{
+	if (::delayedTimeAdvance == 0) {
+		// if no time has passed, don't bother queueing
+		write->noteoff(channel, key);
+		return;
+	}
+
+	::noteOffTimeOffset[::noteOffQueue] = ::delayedTimeAdvance;
+	::noteOffChannel[::noteOffQueue] = channel;
+	::noteOffKey[::noteOffQueue] = key;
+	::noteOffQueue++;
+	assert(::noteOffQueue < NOTE_OFF_QUEUE_SIZE);
+}
+
+void doFinalTimeAdvance()
+{
+	if (::numNotesInLastMeasure > 0) {
+		if (::numNotesInSTTLMeasure == 0)
+			::numNotesInSTTLMeasure = ::numNotesInLastMeasure;
+
+		assert(::firstChannelNoteOnTime != -1);
+		assert(::numNotesInLastMeasure + ::numNotesInSTTLMeasure <= ::noteOnQueue);
+
+		int lastMeasureTime = ::noteOnTime[::noteOnQueue - ::numNotesInLastMeasure];
+		int sttlMeasureTime = ::noteOnTime[::noteOnQueue - ::numNotesInLastMeasure - ::numNotesInSTTLMeasure];
+		int measureLength = lastMeasureTime - sttlMeasureTime;
+		int endTime = lastMeasureTime + measureLength - ::firstChannelNoteOnTime;
+		int timeAdvance = endTime - ::totalTime;
+
+		printf("Measure last: %d sttl: %d length: %d endTime: %d previousEndTime: %d diff: %d\n", lastMeasureTime, sttlMeasureTime, measureLength, endTime, ::totalTime + ::delayedTimeAdvance, endTime - (::totalTime + ::delayedTimeAdvance));
+
+		// new song length should include all note-ons
+		assert(timeAdvance >= 0);
+
+		if (::delayedTimeAdvance > timeAdvance) {
+			// new song length is shorter; some currently-playing notes may have overshot
+			int numCutOffs = 0;
+			for (int i = 0; i < noteOffQueue; i++) {
+				if (::noteOffTimeOffset[i] > timeAdvance) {
+					numCutOffs++;
+					::noteOffTimeOffset[i] = timeAdvance;
+				}
+			}
+			if (numCutOffs > 0)
+				fprintf(stderr, "Warning: New song length is shorter; %d notes were turned off prematurely\n", numCutOffs);
+		}
+
+		::delayedTimeAdvance = timeAdvance;
+	}
+
+	// mark the ending time with an all-notes-off on the drum channel if there is no note-off at the exact ending time
+	if (! doTimeAdvance())
+		write->allnotesoff(gm_drumchannel, 0);
+}
+
+//////
+
 // Function for processing OPL note on and off events, and generating MIDI
 // events in response.  This function is also called when the pitch changes
 // while a note is currently being played, causing it to generate MIDI
@@ -820,6 +948,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 
 		if (keyRequestOff[chanMIDI]) {
 			// process delayed key-off
+			doTimeAdvance();
 			write->noteoff(mapchannel[chanMIDI], lastkey[chanMIDI]);
 			::iNotesActive--;
 			lastkey[chanMIDI] = -1;
@@ -842,6 +971,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 							fprintf(stderr, "Warning: This song wanted to pitchbend by %.2f notes, but the maximum is %.1f\n", dbDiff, PITCHBEND_RANGE);
 
 							// Turn this note off
+							doTimeAdvance();
 							write->noteoff(mapchannel[chanMIDI], lastkey[chanMIDI]);
 							::iNotesActive--;
 							lastkey[chanMIDI] = -1;
@@ -856,6 +986,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 								//printf("pitchbend to %d/%.2lf (center + %d) (%.2lf "
 								//	"semitones)\n", iNewBend, (double)pitchbend_center*2,
 								//	(int)(iNewBend - pitchbend_center), (double)dbDiff);
+								doTimeAdvance();
 								write->pitchbend(mapchannel[chanMIDI], iNewBend);
 //								::iPitchbendCount++;
 								pitchbent[chanMIDI] = iNewBend;
@@ -866,6 +997,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 				} else {
 					// We're not using pitchbends, so just switch off the note if it's different (the next one will play below)
 					if ((::bApproximatePitchbends) && (key != (lastkey[chanMIDI] - transpose[chanMIDI]))) {
+						doTimeAdvance();
 						write->noteoff(mapchannel[chanMIDI], lastkey[chanMIDI]);
 						::iNotesActive--;
 						lastkey[chanMIDI] = -1;
@@ -952,6 +1084,8 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 			if (!instr[i].isdrum) {
 				if (lastMinTime[chanMIDI] == -1) {
 					// channel not yet initialized; do it now
+					// (DON'T do time advance yet; the idea is to initialize with some leeway before the note itself)
+					//doTimeAdvance();
 					if (::bUsePitchBends) {
 						write->control(mapchannel[chanMIDI], 100, 0);  // RPN LSB for "Pitch Bend Sensitivity"
 						write->control(mapchannel[chanMIDI], 101, 0);  // RPN MSB for "Pitch Bend Sensitivity"
@@ -981,10 +1115,15 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 				int prog = instr[i].prog;
 				if (instr[i].lowprog != -1 && lastkey[chanMIDI] <= instr[i].note)
 					prog = instr[i].lowprog;
-				if (lastprog[chanMIDI] != prog)
+				if (lastprog[chanMIDI] != prog) {
+					// (DON'T do time advance yet; the idea is to send the program change with some leeway before the note itself)
+					//doTimeAdvance();
 					write->program(mapchannel[chanMIDI], lastprog[chanMIDI] = prog);
+				}
 			} else {
 				// Percussion
+				//doTimeAdvance();
+				//countNoteOnMessage(gm_drumchannel);
 				//write->noteon(gm_drumchannel, drumnote[chanMIDI], (0x3f - level) << 1);
 				lastkey[chanMIDI] = drumnote[chanMIDI];
 			}
@@ -999,12 +1138,15 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 				if (iNewBend > PITCHBEND_MAX) iNewBend = PITCHBEND_MAX;
 				if (iNewBend != pitchbent[chanMIDI]) {
 					//printf("new note at pitchbend %d\n", iNewBend);
+					doTimeAdvance();
 					write->pitchbend(mapchannel[chanMIDI], iNewBend); // pitchbends are between 0x0000L and 0x2000L
 //					::iPitchbendCount++;
 					pitchbent[chanMIDI] = iNewBend;
 				}
 			}
 
+			doTimeAdvance();
+			countNoteOnMessage(mapchannel[chanMIDI]);
 			write->noteon(mapchannel[chanMIDI], lastkey[chanMIDI], (0x3f - level) << 1);
 			//printf("note on chan %d, mute is %s\n", chanMIDI, mute[chanMIDI] ? "true" : "false");
 			::iNotesActive++;
@@ -1030,7 +1172,7 @@ void doNoteOnOff(bool bKeyOn, int chanOPL, int chanMIDI)
 				// do not allow note off until note has played long enough
 				keyRequestOff[chanMIDI] = true;
 			} else {
-				write->noteoff(mapchannel[chanMIDI], lastkey[chanMIDI]);
+				queueNoteOffMessage(mapchannel[chanMIDI], lastkey[chanMIDI]);
 				::iNotesActive--;
 				lastkey[chanMIDI] = -1;
 				keyAlreadyOn[chanMIDI] = false;
@@ -1092,6 +1234,42 @@ int main(int argc, char**argv)
 			::drumKit = strtod(*argv, NULL) - 1;
 			if (::drumKit < 0 || ::drumKit > 127) {
 				fprintf(stderr, "-k requires a parameter between 1 and 128\n");
+				usage();
+			}
+		} else if (strncasecmp(*argv, "-l", 2) == 0) {
+			argc--; argv++;
+			if (argc == 0) {
+				fprintf(stderr, "-l requires a parameter\n");
+				usage();
+			}
+			// Use the given value
+			::channelToTrack = strtod(*argv, NULL) - 1;
+			if (::channelToTrack < 0 || ::channelToTrack > 15) {
+				fprintf(stderr, "-l requires a parameter between 1 and 16\n");
+				usage();
+			}
+		} else if (strncasecmp(*argv, "-m", 2) == 0) {
+			argc--; argv++;
+			if (argc == 0) {
+				fprintf(stderr, "-m requires a parameter\n");
+				usage();
+			}
+			// Use the given value
+			::numNotesInLastMeasure = strtod(*argv, NULL);
+			if (::numNotesInLastMeasure < 1 || ::numNotesInLastMeasure > NOTE_ON_QUEUE_SIZE - 1) {
+				fprintf(stderr, "-m requires a parameter between 1 and %d\n", NOTE_ON_QUEUE_SIZE - 1);
+				usage();
+			}
+		} else if (strncasecmp(*argv, "-n", 2) == 0) {
+			argc--; argv++;
+			if (argc == 0) {
+				fprintf(stderr, "-n requires a parameter\n");
+				usage();
+			}
+			// Use the given value
+			::numNotesInSTTLMeasure = strtod(*argv, NULL);
+			if (::numNotesInSTTLMeasure < 1 || ::numNotesInSTTLMeasure > NOTE_ON_QUEUE_SIZE - 1) {
+				fprintf(stderr, "-n requires a parameter between 1 and %d\n", NOTE_ON_QUEUE_SIZE - 1);
 				usage();
 			}
 		} else if (strncasecmp(*argv, "--version", 9) == 0) {
@@ -1208,11 +1386,16 @@ int main(int argc, char**argv)
 		iSpeed = iInitialSpeed;
 	}
 	resolution = iInitialSpeed / 2;
-	write->head(/* version */ 1, /* track count updated later */0, resolution);
+	write->head(/* version */ 0, /* track count updated later */0, resolution);
 
 	write->track();
 	//write->tempo((long)(60000000.0 / tempo));
 	//write->tact(4,4,24,8);
+
+	write->resetctrlrs(gm_drumchannel, 0);  // Reset All Controllers (Ensures default settings upon every playback).
+	write->volume(gm_drumchannel, 127);
+	write->balance(gm_drumchannel, 64);  // Usually called 'Pan'.
+	write->program(gm_drumchannel, 69);  // we don't know which drumkit yet; just prepare the slot where to put it
 
 	for (c = 0; c <= 8; c++) {
 		lastprog[c] = -1;
@@ -1272,7 +1455,7 @@ int main(int argc, char**argv)
 					// instead of doing the delay in one go, decrement it and check whether there are notes that are
 					// in the process of being turned off (but haven't yet because the note length would be too short)
 					delay--;
-					write->time(1);
+					::delayedTimeAdvance++;
 					for (int chan = 0; chan < 16; chan++)
 					{
 						if (keyAlreadyOn[chan])
@@ -1423,26 +1606,44 @@ int main(int argc, char**argv)
 	if (::iNotesActive > 0) {
 		for (c = 0; c < 9; c++) {
 			if (lastkey[c] != -1) {
-				write->noteoff(mapchannel[c], lastkey[c]);
+				queueNoteOffMessage(mapchannel[c], lastkey[c]);
 				::iNotesActive--;
 			}
 		}
-	} else {
-		// if there weren't any remaining notes, we still need to mark the end of the track for proper looping
-		// (it can be any non-playing message)
-		write->allnotesoff(gm_drumchannel, 0);
 	}
 
-	// write the final drumkit used
-	write->track();
-	write->resetctrlrs(gm_drumchannel, 0);  // Reset All Controllers (Ensures default settings upon every playback).
-	write->volume(gm_drumchannel, 127);
-	write->balance(gm_drumchannel, 64);  // Usually called 'Pan'.
-	write->program(gm_drumchannel, ::drumKit);
-	printf("\nUsing drumkit %d", ::drumKit + 1);
+	doFinalTimeAdvance();
+	fprintf(stderr, "\nStart time: %d  Total time: %d", ::firstSongNoteOnTime, ::totalTime);
 
 	delete write;
 	fclose(f);
+
+	// rewrite the file to add the drumkit information
+	FILE *pInFile = fopen(output, "rb");
+	if (pInFile)
+	{
+		fseek(pInFile, 0L, SEEK_END);
+		unsigned int size = ftell(pInFile);
+		rewind(pInFile);
+		std::unique_ptr<unsigned char []> pBuffer(new unsigned char[size]);
+		unsigned char *buffer = pBuffer.get();
+		fread(buffer, size, 1, pInFile);
+		fclose(pInFile);
+
+		// write the final drumkit used in the slot we reserved earlier
+		int p = 22;  // skip the header
+		while (buffer[p] != 69)
+			p++;
+		buffer[p] = drumKit;
+		printf("\nUsing drumkit %d", ::drumKit + 1);
+
+		FILE *pOutFile = fopen(output, "wb");
+		if (pOutFile)
+		{
+			fwrite(buffer, size, 1, pOutFile);
+			fclose(pOutFile);
+		}
+	}
 
 	// Display completion message and some stats
 	printf("\nConversion complete.  Wrote %s\n\n  Total pitchbent notes: %d\n"

@@ -51,6 +51,21 @@ Okay, technically you can, but you will have to manage the conversion process pe
 Version History
 ===============
 
+1.11 (2021-08-14)
+-----------------
+
+- Changed some high percussive-melodic notes to better match the OPL2 output.
+- dro2midi changes:
+  - Added loop length adjustment by specifying a channel to track, followed by
+    the number of notes on this channel during the last measure (and, optionally,
+    second-to-the-last). The end time of the song will be adjusted by lengthening
+    the last measure to be as long as the second-to-the-last one, minus the time
+    before the first note on the tracked channel. Now the title song and several
+    other songs loop correctly!
+  - Placed drumkit change at the start of the track instead of creating a new
+    track, because ECWolf currently has a bug where MIDI time offsets are not
+    synchronously processed across all tracks.
+
 1.1 (2021-08-12)
 ----------------
 
@@ -105,35 +120,63 @@ ECWolf seems to use only the first (default) MIDI device reported in the system,
 Bring "M" on!
 -------------
 
-This mod has been tested with the following hardware and synthesizers (ordered by personal preference):
+This mod has been tested with the following hardware and software synthesizers (ordered by personal preference):
 
-- Roland SC-D70 (equivalent to Roland SC-8820)
-- Roland CM-300 (equivalent to Roland SC-55)
-- [Roland SC-VA VST](https://www.roland.com/us/products/rc_sound_canvas_va/)
-  - Requires [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) and [SAVIHost for 64-bit VST2](https://www.hermannseib.com/english/savihost.htm).
-  - Set up loopMIDI first. Make sure to create a loopMIDI port.
-  - Refer to the SAVIHost instructions on how to get the VST working with it.
-    - _For SC-VA, make sure you are using a *64-bit* VST2 version._
-  - Under the VST window's main menu, select Devices->MIDI and select the loopMIDI port in Input Port 1. (NOT in Output Port.)
-  - In the VST itself, select Option->SYSTEM and change the map mode to your preference (SC-8820, SC-55, etc.). Then change the sound module mode to GM.
-  - If ECWolf refuses to run with this device by default, use [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
-- [Coolsoft VirtualMIDISynth](https://coolsoft.altervista.org/en/virtualmidisynth)
+- Roland SC-D70
+  - Equivalent to Roland SC-8820.
+- Roland CM-300
+  - Equivalent to Roland SC-55.
+- [Roland SC-VA VSTi](https://www.roland.com/us/products/rc_sound_canvas_va/)* (costs $69 on the Roland Cloud)
+  - Essentially an official Roland SC-8820 emulator.
+  - See setup requirements below.
+- [Coolsoft VirtualMIDISynth](https://coolsoft.altervista.org/en/virtualmidisynth) (free)
+  - Soundfont-based software synth -- soundfonts are acquired separately.
   - Tested with [trevor0402's](https://github.com/trevor0402/SC55Soundfont/releases) and [Patch93's](https://musical-artifacts.com/artifacts/1228) SC-55 soundfonts.
-- [Yamaha S-YXG50 VST](https://veg.by/en/projects/syxg50/)
-  - Requires [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) and [SAVIHost for 32-bit VST2](https://www.hermannseib.com/english/savihost.htm).
-  - Set up loopMIDI first. Make sure to create a loopMIDI port.
-  - Refer to the SAVIHost instructions on how to get the VST working with it.
-    - _For S-YXG50, make sure you are using a *32-bit* VST2 version._
-  - Under the VST window's main menu, select Devices->MIDI and select the loopMIDI port in Input Port 1. (NOT in Output Port.)
-  - If ECWolf refuses to run with this device by default, use [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
-- [Munt MT-32](https://sourceforge.net/projects/munt/)
-  - Requires [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html). Make sure to create a loopMIDI port.
-  - Run the Munt MT-32 shortcut on your Start Menu, then click Tools->New MIDI Port and select the loopMIDI port.
-  - Using a MIDI player, play Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on the loopMIDI device _before_ launching ECWolf.
-  - If ECWolf refuses to run with this device by default, use [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
+- [Yamaha S-YXG50 VSTi](https://veg.by/en/projects/syxg50/)* (abandonware)
+  - XG soft synth popularized by the original PC versions of Final Fantasy VII/VIII.
+  - Formally discontinued, but still available to download above.
+  - See setup requirements below.
+- [Munt VSTi](http://falcosoft.hu/softwares.html)* (free)
+  - Roland MT-32 emulator -- the VSTi version is easier to setup than regular Munt.
+  - See setup requirements below.
+- [Munt](https://sourceforge.net/projects/munt/)* (free)
+  - Closer to the limitations of an actual MT-32.
+  - Also harder to set up than the VSTi version -- like an actual MT-32, it does not support General MIDI until you program it using Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility.
+  - See setup requirements below.
 - Microsoft GS Wavetable Synth (meh)
 
-It should also work on a real MT-32 or CM-32L with Roland's MTGM.MID utility. (I don't have either, but other users say that Munt is very close.)
+A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on it before launching ECWolf. (I don't have an MT-32, but other users say that Munt is very close.)
+
+*_To use any VSTi for MIDI playback, you will need to do the following:_
+  - Setup [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html).
+    - Make sure to launch loopMIDI after setup and create a loopMIDI Port.
+  - Download [SAVIHost](https://www.hermannseib.com/english/savihost.htm).
+    - For Roland SC-VA or Munt VSTi, download a _64-bit VST2_ (not VST3) version.
+    - For Yamaha S-YXG50, download a _32-bit VST2_ (not VST3) version.
+    - The "with keyboard" version is not needed.
+  - Copy savihost.exe into the VSTi's installation folder (you may need admin privileges), then rename savihost.exe to use the same name as the main DLL file of the VSTi (e.g., "Sound Canvas VA.exe", "syxg50.exe", or "MuntVsti.exe").
+  - Create a shortcut to the .exe on your desktop (or other preferred location), then launch it.
+  - On the SAVIHost window's menu bar, select Devices->MIDI and select the loopMIDI port in Input Port 1. (NOT in Output Port.)
+    - Now SAVIHost will receive all messages from any application that outputs MIDI data to the loopMIDI OUT port.
+  - For Roland SC-VA, you can enable classic SC-55 sounds:
+    - Click the Option button on the VSTi itself.
+    - Select SYSTEM from the menu.
+    - Select SC-55 in the Map Mode drop-down list.
+    - To make this the default, check File->Autosave Plugin Bank on the SAVIHost window.
+  - Before launching ECWolf, always launch the SAVIHost shortcut on your desktop first; otherwise you will not get any music.
+    - If ECWolf refuses to find the loopMIDI device by default, you will also need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
+
+*_To use regular Munt (not the VSTi version) for MIDI playback, you will need to do the following:_
+  - Setup [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html).
+    - Make sure to launch loopMIDI after setup and create a loopMIDI Port.
+  - Before launching ECWolf:
+    - Run the Munt MT-32 shortcut on your Start Menu.
+    - Click Tools->New MIDI Port and select the loopMIDI port.
+    - Now Munt will receive all messages from any application that outputs MIDI data to the loopMIDI OUT port. More importantly, the virtual MT-32 device is not reinitialized for every app that uses it, potentially erasing the GM settings. (That's why you needed loopMIDI.)
+    - Using a MIDI player, play Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on the loopMIDI device.
+    - Finally, launch ECWolf.
+      - You will need to do the same steps EVERY time, sadly. The VSTi version is highly recommended because GM mode is built into the VSTi.
+      - If ECWolf refuses to find the loopMIDI device by default, you will also need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
 
 I am H@xx0r Incarnate!
 ----------------------
