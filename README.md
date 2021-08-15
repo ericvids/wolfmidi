@@ -168,6 +168,11 @@ A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](
     - Select SYSTEM from the menu.
     - Select SC-55 in the Map Mode drop-down list.
     - To make this the default, check File->Autosave Plugin Bank on the SAVIHost window.
+  - For Munt VSTi, you will want to set GM mode:
+    - In the Reset Mode box on the VSTi itself, click GM.
+    - Click the Reset Synths button.
+      - Dual Synth is not needed by wolfmidi since it uses only the first 8 channels.
+    - To make this the default, check File->Autosave Plugin Bank on the SAVIHost window.
   - Before launching ECWolf, always launch the SAVIHost shortcut on your desktop first; otherwise you will not get any music.
     - If ECWolf refuses to find the loopMIDI device by default, you will also need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
 
