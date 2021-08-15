@@ -69,7 +69,7 @@ NO 11-11/0A-00/FE-F2/04-BD/08/00-00: patch=40                                   
 NO 11-E4/03-40/82-F0/97-F2/08/00-00: patch=75 transpose=12 mintime=3500               ### (manually-assigned)
 NO 13-E1/4D-00/FA-F1/11-F1/08/00-00: patch=89 mintime=3500 kit=26                       # 89 (CORNER), 89 (POW)
 NO 16-E1/4D-00/FA-F1/11-F1/08/00-00: patch=89 mintime=3500 kit=26                       # 89 (XTOWER2)
-NO 17-31/C0-80/12-13/41-31/06/00-00: patch=96 transpose=36 mintime=2500               ### (manually-assigned)
+NO 17-31/C0-80/12-13/41-31/06/00-00: patch=96 transpose=36 mintime=2900               ### (manually-assigned)
 NO 20-21/1B-00/63-63/0A-0B/0C/00-00: patch=58                                         ### (manually-assigned)
 NO 21-21/15-00/B4-94/4C-AC/0A/00-00: patch=40                                           # 40 (POW)
 NO 21-21/15-80/D3-C3/2C-2C/0A/00-00: patch=33                                           # 33 (ZEROHOUR)
@@ -132,7 +132,7 @@ NO 93-A1/4C-00/FA-F1/11-F1/08/00-03: patch=15 transpose=12                      
 NO A1-E2/13-80/D6-60/AF-2A/02/00-00: patch=74                                           # 74 (GETTHEM)
 NO A2-E2/1D-80/95-60/24-2A/02/00-00: patch=74 transpose=12                              # 74 (CORNER), 73 (WARMARCH), 44 (WONDERIN)
 NO B0-D7/C4-80/A4-40/02-42/00/00-00: patch=10                                         ### (manually-assigned)
-NO CA-CC/84-00/F0-59/F0-62/0C/00-00: patch=123 mintime=3500                           ### (manually-assigned)
+NO CA-CC/84-00/F0-59/F0-62/0C/00-00: patch=123 mintime=4300                           ### (manually-assigned)
 NO D7-D2/4F-00/F2-F1/61-B2/08/00-00: patch=15 transpose=24                            ### (manually-assigned)
 NO E2-E1/CA-00/F8-C0/E5-0E/08/00-00: patch=18                                           # 18 (XEVIL), 103 (XFUNKIE)
 NO F1-E1/18-00/32-F1/11-13/00/00-00: patch=91                                           # 78 (POW), 89 (XTOWER2), 29 (ZEROHOUR) -- 91 used instead of 89 to more closely match attack time of 78 and 29

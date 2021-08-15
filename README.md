@@ -51,6 +51,11 @@ Okay, technically you can, but you will have to manage the conversion process pe
 Version History
 ===============
 
+1.12 (2021-08-15)
+-----------------
+
+- Small change to minimum time (only affects GOINGAFT).
+
 1.11 (2021-08-14)
 -----------------
 
