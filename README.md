@@ -51,6 +51,17 @@ Okay, technically you can, but you will have to manage the conversion process pe
 Version History
 ===============
 
+1.13 (2021-08-17)
+-----------------
+
+- Replaced Recorder sound with Blown Bottle, allowing the sound to be pitched as
+  high as the original OPL2 patch without ear-piercing artifacts on GM.
+- Replaced XPUTIT's bass line from SynthBrass 1 to Lead 8 to compensate for the
+  higher pitch of the Blown Bottle while matching the sound to the OPL2 version.
+  This has the side effect of making the bass line of SUSPENSE much louder, which
+  might need getting used to.
+- Pitched down a Tubular Bells patch to avoid getting cut off (out-of-range).
+
 1.12 (2021-08-15)
 -----------------
 
