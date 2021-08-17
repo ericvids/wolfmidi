@@ -51,6 +51,12 @@ Okay, technically you can, but you will have to manage the conversion process pe
 Version History
 ===============
 
+1.14 (2021-08-17)
+-----------------
+
+- Replaced Blown Bottle with Piccolo to make it sound even mellower (it was
+  too loud on non-SC-55 devices).
+
 1.13 (2021-08-17)
 -----------------
 

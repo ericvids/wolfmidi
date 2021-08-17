@@ -66,7 +66,7 @@ NO 07-12/0A-00/F2-F2/60-52/00/03-03: drum=51 kit=1                              
 NO 07-12/4F-00/F2-F2/60-72/08/00-00: patch=15 transpose=27                            ### (manually-assigned)
 NO 11-01/44-00/F8-F7/FF-45/00/00-00: drum=36                                          ### (manually-assigned)
 NO 11-11/0A-00/FE-F2/04-BD/08/00-00: patch=40                                         ### (manually-assigned)
-NO 11-E4/03-40/82-F0/97-F2/08/00-00: patch=77 transpose=24 mintime=3500               ### (manually-assigned)
+NO 11-E4/03-40/82-F0/97-F2/08/00-00: patch=73 transpose=24 mintime=3500               ### (manually-assigned)
 NO 13-E1/4D-00/FA-F1/11-F1/08/00-00: patch=89 mintime=3500 kit=26                       # 89 (CORNER), 89 (POW)
 NO 16-E1/4D-00/FA-F1/11-F1/08/00-00: patch=89 mintime=3500 kit=26                       # 89 (XTOWER2)
 NO 17-31/C0-80/12-13/41-31/06/00-00: patch=96 transpose=36 mintime=2900               ### (manually-assigned)
