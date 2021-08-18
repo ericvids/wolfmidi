@@ -148,17 +148,17 @@ This mod has been tested with the following hardware and software synthesizers (
   - Equivalent to Roland SC-8820.
 - Roland CM-300
   - Equivalent to Roland SC-55.
-- [Roland SC-VA VSTi](https://www.roland.com/us/products/rc_sound_canvas_va/)* (costs $69 on the Roland Cloud)
+- [Roland SC-VA VSTi](https://www.roland.com/us/products/rc_sound_canvas_va/)* (costs $69 on Roland Cloud) [(get trial here)](https://static.roland.com/assets/media/zip/scva_win_trial.zip)
   - Essentially an official Roland SC-8820 emulator.
   - See setup requirements below.
 - [Coolsoft VirtualMIDISynth](https://coolsoft.altervista.org/en/virtualmidisynth) (free)
   - Soundfont-based software synth -- soundfonts are acquired separately.
   - Tested with [trevor0402's](https://github.com/trevor0402/SC55Soundfont/releases) and [Patch93's](https://musical-artifacts.com/artifacts/1228) SC-55 soundfonts.
 - [Yamaha S-YXG50 VSTi](https://veg.by/en/projects/syxg50/)* (abandonware)
-  - XG soft synth popularized by the original PC versions of Final Fantasy VII/VIII.
+  - XG software synth popularized by the original PC versions of Final Fantasy VII/VIII.
   - Formally discontinued, but still available to download above.
   - See setup requirements below.
-- [Munt VSTi](http://falcosoft.hu/softwares.html)* (free)
+- [Munt VSTi](http://falcosoft.hu/softwares.html#munt_vsti)* (free)
   - Roland MT-32 emulator -- the VSTi version is easier to setup than regular Munt.
   - See setup requirements below.
 - [Munt](https://sourceforge.net/projects/munt/)* (free)
@@ -175,8 +175,8 @@ A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](
   - Download [SAVIHost](https://www.hermannseib.com/english/savihost.htm).
     - For Roland SC-VA or Munt VSTi, download a _64-bit VST2_ (not VST3) version.
     - For Yamaha S-YXG50, download a _32-bit VST2_ (not VST3) version.
-    - The "with keyboard" version is not needed.
-  - Copy savihost.exe into the VSTi's installation folder (you may need admin privileges), then rename savihost.exe to use the same name as the main DLL file of the VSTi (e.g., "Sound Canvas VA.exe", "syxg50.exe", or "MuntVsti.exe").
+    - The "including keyboard" version is not needed.
+  - Copy savihost.exe into the VSTi's installation folder (you may need admin privileges), then rename savihost.exe to use the same name as the main DLL file of the VSTi (e.g., "SOUND Canvas VA.exe", "syxg50.exe", or "MuntVsti.exe").
   - Create a shortcut to the .exe on your desktop (or other preferred location), then launch it.
   - On the SAVIHost window's menu bar, select Devices->MIDI and select the loopMIDI port in Input Port 1. (NOT in Output Port.)
     - Now SAVIHost will receive all messages from any application that outputs MIDI data to the loopMIDI OUT port.
@@ -186,9 +186,9 @@ A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](
     - Select SC-55 in the Map Mode drop-down list.
     - To make this the default, check File->Autosave Plugin Bank on the SAVIHost window.
   - For Munt VSTi, you will want to set GM mode:
-    - In the Reset Mode box on the VSTi itself, click GM.
+    - In the Reset Mode box on the VSTi itself, change the selection from MT32 to GM.
+      - Dual Synth is not needed by wolfmidi since it uses only the first 8 channels, but you may leave it on to use for other General MIDI apps.
     - Click the Reset Synths button.
-      - Dual Synth is not needed by wolfmidi since it uses only the first 8 channels.
     - To make this the default, check File->Autosave Plugin Bank on the SAVIHost window.
   - Before launching ECWolf, always launch the SAVIHost shortcut on your desktop first; otherwise you will not get any music.
     - If ECWolf refuses to find the loopMIDI device by default, you will also need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
