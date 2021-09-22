@@ -5,7 +5,7 @@
 
 int main(int c, char *argv[])
 {
-    if (c > 2)
+    if (c > 1)
     {
         FILE *pInFile = fopen(argv[1], "rb");
         if (pInFile)
@@ -45,11 +45,22 @@ int main(int c, char *argv[])
                     continue;
                 }
 
+                // write lookup _INFO for this song
                 char sz[256];
-                strcpy(sz, argv[2]);
-                sz[strlen(sz) + 1] = 0;
-                sz[strlen(sz)] = '\\';
-                strcpy(&sz[strlen(sz)], (const char *) &buffer[p - 88 + 2]);
+                memset(sz, 0, 256);
+                sz[0] = (nextSize - 2) % 256;
+                sz[1] = (nextSize - 2) / 256;
+                strcpy(&sz[2], (const char *) &buffer[p - 88 + 2]);
+                FILE *pInfoFile = fopen("MUSIC\\_INFO", "ab");
+                if (pInfoFile)
+                {
+                    fwrite(sz, 10, 1, pInfoFile);
+                    fclose(pInfoFile);
+                }
+
+                // extract the actual song
+                strcpy(sz, "WLF\\");
+                strcpy(&sz[4], (const char *) &buffer[p - 88 + 2]);
                 sz[strlen(sz) + 4] = 0;
                 sz[strlen(sz) + 3] = 'F';
                 sz[strlen(sz) + 2] = 'L';
@@ -66,6 +77,18 @@ int main(int c, char *argv[])
 
         }
         fclose(pInFile);
+    }
+    else
+    {
+        // write _INFO eof entry
+        char sz[10];
+        memset(sz, 0, 10);
+        FILE *pInfoFile = fopen("MUSIC\\_INFO", "ab");
+        if (pInfoFile)
+        {
+            fwrite(sz, 10, 1, pInfoFile);
+            fclose(pInfoFile);
+        }
     }
 
     return 0;

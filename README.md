@@ -13,9 +13,9 @@ You should have received a copy of the GNU General Public License v2 along with 
 About
 =====
 
-**wolfmidi** is a music mod for the [ECWolf-powered](http://maniacsvault.net/ecwolf/) Windows and Mac ports of Wolfenstein 3-D and Spear of Destiny by id Software. This mod replaces the AdLib/OPL2 soundtrack with a fully-instrumented General MIDI soundtrack, auto-generated from the games' own data. This *drastically* improves music quality.
+**wolfmidi** is a music enhancement mod for Wolfenstein 3-D and Spear of Destiny by id Software. This mod replaces the AdLib/OPL2 soundtrack with a fully-instrumented General MIDI soundtrack, auto-generated from the games' own data. This *drastically* improves music quality.
 
-[ECWolf](http://maniacsvault.net/ecwolf/) is required to use this mod.
+Either [ECWolf](http://maniacsvault.net/ecwolf/) or [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/) is required to use this mod. ECWolf is recommended on modern systems. For older systems, wolfdosmpu provides an alternative DOS executable to play MIDI through the traditional MPU-401 UART interface.
 
 It is highly recommended to use this mod in conjunction with a MIDI hardware module such as Roland Sound Canvas, or at least through a software synthesizer such as [VirtualMIDISynth](https://coolsoft.altervista.org/en/virtualmidisynth). The Windows default synth is anyway a bit better than OPL2, but it seriously lacks reverb.
 
@@ -50,6 +50,11 @@ Okay, technically you can, but you will have to manage the conversion process pe
 
 Version History
 ===============
+
+1.20 (2021-09-22)
+-----------------
+
+- Added DOS support via sister project [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/).
 
 1.14 (2021-08-17)
 -----------------
@@ -88,8 +93,8 @@ Version History
     track, because ECWolf currently has a bug where MIDI time offsets are not
     synchronously processed across all tracks.
 
-1.1 (2021-08-12)
-----------------
+1.10 (2021-08-12)
+-----------------
 
 - Made extensive changes to inst.txt to use custom release time and GS drumkit
   support (details mentioned in dro2midi changes below), as well as to adjust
@@ -120,8 +125,8 @@ Version History
     is automatically selected depending on the other drum sounds used by the
     song. GM1-only devices will silently ignore GS drumkit program changes.
 
-1.0 (2021-06-30)
-----------------
+1.00 (2021-06-30)
+-----------------
 
 - Initial release.
 
@@ -132,12 +137,18 @@ Usage
 Can I play NOW, daddy?
 ----------------------
 
-A pre-built [wolfmidi.pk3](https://github.com/ericvids/wolfmidi/raw/main/wolfmidi.pk3) has been provided for your convenience. Simply [download](https://github.com/ericvids/wolfmidi/raw/main/wolfmidi.pk3) the file, save it in your ECWolf folder, and modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.pk3" (without the quotes) in the shortcut's Target field.
+Download a pre-built wolfmidi.zip from the [Releases section](https://github.com/ericvids/wolfmidi/releases/).
+
+If you use [ECWolf](http://maniacsvault.net/ecwolf/), simply copy the .zip in your ECWolf folder, then modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.zip" (without the quotes) in the shortcut's Target field.
+
+If you use [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/), you will need to unzip wolfmidi.zip's contents inside your game's installation directory, e.g., C:\WOLF3D. _You need to preserve the directory structure when unzipping! (Refer to your preferred zip utility's documentation for details.)_ (More information in the wolfdosmpu readme.)
 
 Don't hurt MIDI.
 ----------------
 
 ECWolf seems to use only the first (default) MIDI device reported in the system, which is usually the crappy Microsoft GS Wavetable Synth. You may need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) to set the Windows default MIDI device.
+
+If you use wolfdosmpu inside DOSBox, select your MIDI device with the help of [this guide](https://www.dosbox.com/wiki/Configuration:MIDI).
 
 Bring "M" on!
 -------------
@@ -167,7 +178,7 @@ This mod has been tested with the following hardware and software synthesizers (
   - See setup requirements below.
 - Microsoft GS Wavetable Synth (meh)
 
-A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on it before launching ECWolf. (I don't have an MT-32, but other users say that Munt is very close.)
+A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on it before launching the game. (I don't have an MT-32, but other users say that Munt is very close.)
 
 *_To use any VSTi for MIDI playback, you will need to do the following:_
   - Setup [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html).
@@ -190,25 +201,25 @@ A real MT-32 (or CM-32L/CM-64) should also work, by playing Roland's [MTGM.MID](
       - Dual Synth is not needed by wolfmidi since it uses only the first 8 channels, but you may leave it on to use for other General MIDI apps.
     - Click the Reset Synths button.
     - To make this the default, check File->Autosave Plugin Bank on the SAVIHost window.
-  - Before launching ECWolf, always launch the SAVIHost shortcut on your desktop first; otherwise you will not get any music.
+  - Before launching the game, always launch the SAVIHost shortcut on your desktop first; otherwise you will not get any music.
     - If ECWolf refuses to find the loopMIDI device by default, you will also need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
 
 *_To use regular Munt (not the VSTi version) for MIDI playback, you will need to do the following:_
   - Setup [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html).
     - Make sure to launch loopMIDI after setup and create a loopMIDI Port.
-  - Before launching ECWolf:
+  - Before launching the game:
     - Run the Munt MT-32 shortcut on your Start Menu.
     - Click Tools->New MIDI Port and select the loopMIDI port.
     - Now Munt will receive all messages from any application that outputs MIDI data to the loopMIDI OUT port. More importantly, the virtual MT-32 device is not reinitialized for every app that uses it, potentially erasing the GM settings. (That's why you needed loopMIDI.)
     - Using a MIDI player, play Roland's [MTGM.MID](https://www.roland.com/us/support/by_product/all/general_apps_tools/508451ba-ab7a-44bb-979c-a4097dfe1142/) utility on the loopMIDI device.
-    - Finally, launch ECWolf.
+    - Finally, launch the game itself.
       - You will need to do the same steps EVERY time, sadly. The VSTi version is highly recommended because GM mode is built into the VSTi.
       - If ECWolf refuses to find the loopMIDI device by default, you will also need [MIDIMapper](https://coolsoft.altervista.org/en/midimapper) and set the default MIDI Out device as the loopMIDI port.
 
 I am H@xx0r Incarnate!
 ----------------------
 
-If you want to build the .pk3 or the MIDI files from scratch, using your own copy of the game(s)' data:
+If you want to build the mod from scratch, using your own copy of the game(s)' data:
 
 1. Create an admin command prompt window (press WinKey+R, type "cmd" without quotes, and then press Ctrl+Shift+Enter).
 2. Install chocolatey (https://docs.chocolatey.org/en-us/choco/setup). **Hint:** Simply copy the command indicated in the **Install with cmd.exe** section and paste it into the admin command prompt window.
@@ -229,6 +240,6 @@ make.bat does the following:
 1. Build the tool executables (getwlf.exe and dro2midi.exe) using g++ (from chocolatey package "mingw", installed earlier)
 2. Extract the .WLF files from the AUDIOT.* archives using getwlf.exe
 3. Convert the .WLF files to .MID files using dro2midi.exe
-4. Bundle the .MID files into the final .pk3 file using InfoZIP (from chocolatey package "zip", installed earlier)
+4. Bundle the .MID files (without extension, as required by ECWolf) into the final .zip file using InfoZIP (from chocolatey package "zip", installed earlier)
 
 Building from scratch will also allow you to adjust the instrument mapping to your own liking. See the inst.txt file for more details.

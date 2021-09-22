@@ -11,11 +11,12 @@ if "%1"=="clean" goto clean
 mkdir WLF
 mkdir MUSIC
 mkdir MID
-ver >nul && rem This resets the errorlevel
+ver >nul                                           && rem Reset errorlevel
 g++ src\getwlf.cpp -o getwlf.exe
 g++ src\dro2midi.cpp src\midiio.cpp -o dro2midi.exe
 if errorlevel 1 goto nogcc
-for /f %%f in ('dir /b AUDIOT.*') do getwlf %%f WLF
+for /f %%f in ('dir /b AUDIOT.*') do getwlf %%f    && rem Extract .WLF files from each AUDIOT.* file and save metadata to _INFO
+getwlf                                             && rem Finalize _INFO file
 if not exist WLF\WONDERIN.WLF goto nowlf
 dro2midi -k 49 -i -l 8 -m 1 -n 2 WLF\COPYPRO.WLF MUSIC\COPYPRO
 dro2midi -k 49 -i -l 1 -m 1 WLF\CORNER.WLF MUSIC\CORNER
@@ -92,9 +93,9 @@ copy MUSIC\XTHEEND  "MID\36 - Is This THE END.mid"
 copy MUSIC\XTIPTOE  "MID\29 - Tiptoeing Around.mid"
 copy MUSIC\XTOWER2  "MID\28 - The Tower.mid"
 copy MUSIC\ZEROHOUR "MID\17 - Zero Hour.mid"
-del wolfmidi.pk3
-zip wolfmidi.pk3 MUSIC\*
-ver >nul && rem This resets the errorlevel
+del wolfmidi.zip
+zip wolfmidi.zip MUSIC\*
+ver >nul                                           && rem Reset errorlevel
 if exist MUSIC\HITLWLTZ (
     if exist MUSIC\COPYPRO (
         fc /b MUSIC\HITLWLTZ MUSIC\COPYPRO
@@ -126,8 +127,8 @@ echo WARNING: HITLWLTZ should generate the exact same .mid file as COPYPRO -- so
 
 :finish
 echo ============
-echo If you have zip installed, you should now have a wolfmidi.pk3 that you can use in ECWolf.
-echo Otherwise, you should have the MIDI files in mid\ and the wolfmidi.pk3 contents in MUSIC\
+echo If you have zip installed, you should now have a wolfmidi.zip that you can use in ECWolf.
+echo Otherwise, you should have the MIDI files in mid\ and the wolfmidi.zip contents in MUSIC\
 
 :done
 pause
