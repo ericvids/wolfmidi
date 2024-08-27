@@ -1,7 +1,7 @@
 **wolfmidi**
 ============
 
-Copyright © 2021 by ericvids.
+Copyright © 2021-2024 by ericvids.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License v2 ONLY, as published by the Free Software Foundation.
 
@@ -15,7 +15,7 @@ About
 
 **wolfmidi** is a music enhancement mod for Wolfenstein 3-D and Spear of Destiny by id Software. This mod replaces the AdLib/OPL2 soundtrack with a fully-instrumented General MIDI soundtrack, auto-generated from the games' own data. This *drastically* improves music quality.
 
-Either [ECWolf](http://maniacsvault.net/ecwolf/) or [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/) is required to use this mod. ECWolf is recommended on modern systems. For older systems, wolfdosmpu provides an alternative DOS executable to play MIDI through the traditional MPU-401 UART interface.
+Either [ECWolf](http://maniacsvault.net/ecwolf/) or [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/) is required to use this mod. ECWolf is recommended on modern systems. For older systems (or if you prefer the original DOS version of Wolf3D over ECWolf), wolfdosmpu provides an alternative DOS executable to play MIDI through the traditional MPU-401 UART interface.
 
 It is highly recommended to use this mod in conjunction with a MIDI hardware module such as Roland Sound Canvas, or at least through a software synthesizer such as [VirtualMIDISynth](https://coolsoft.altervista.org/en/virtualmidisynth). The Windows default synth is anyway a bit better than OPL2, but it seriously lacks reverb.
 
@@ -50,6 +50,11 @@ Okay, technically you can, but you will have to manage the conversion process pe
 
 Version History
 ===============
+
+1.20.1 (2024-08-27)
+-------------------
+
+- Updated instructions for ECWolf version 1.4.1.  (No changes were made to the MIDI files.)
 
 1.20 (2021-09-22)
 -----------------
@@ -139,9 +144,12 @@ Can I play NOW, daddy?
 
 Download a pre-built wolfmidi.zip from the [Releases section](https://github.com/ericvids/wolfmidi/releases/).
 
-If you use [ECWolf](http://maniacsvault.net/ecwolf/), simply copy the .zip in your ECWolf folder, then modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.zip" (without the quotes) in the shortcut's Target field.
+If you use [ECWolf](http://maniacsvault.net/ecwolf/):
+- Copy the .zip in your ECWolf folder.
+- Modify your ECWolf startup shortcut to append the command-line parameters " --file wolfmidi.zip" (without the quotes) in the shortcut's Target field.
+- Start ECWolf, then immediately go to "Options" -> "Sound Options", then change the "Music Device & Volume" setting from "AdLib/Sound Blaster" to "SDL_mixer MIDI Synth".
 
-If you use [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/), you will need to unzip wolfmidi.zip's contents inside your game's installation directory, e.g., C:\WOLF3D. _You need to preserve the directory structure when unzipping! (Refer to your preferred zip utility's documentation for details.)_ (More information in the wolfdosmpu readme.)
+If you use [wolfdosmpu](https://github.com/ericvids/wolfdosmpu/), please refer to wolfdosmpu's README.md for full instructions.
 
 Don't hurt MIDI.
 ----------------
